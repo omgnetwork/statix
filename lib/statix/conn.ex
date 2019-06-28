@@ -1,7 +1,7 @@
 defmodule Statix.Conn do
   @moduledoc false
 
-  defstruct [:sock, :header]
+  defstruct [:prefix, :sock, :addr, :port]
 
   alias Statix.Packet
 
@@ -11,8 +11,7 @@ defmodule Statix.Conn do
 
   def new(host, port) when is_list(host) or is_tuple(host) do
     {:ok, addr} = :inet.getaddr(host, :inet)
-    header = Packet.header(addr, port)
-    %__MODULE__{header: header}
+    %__MODULE__{addr: addr, port: port}
   end
 
   def open(%__MODULE__{} = conn) do
@@ -20,18 +19,23 @@ defmodule Statix.Conn do
     %__MODULE__{conn | sock: sock}
   end
 
-  def transmit(%__MODULE__{} = conn, type, key, val, options)
+  def transmit(
+        %__MODULE__{prefix: prefix, sock: sock, addr: addr, port: port},
+        type,
+        key,
+        val,
+        options
+      )
       when is_binary(val) and is_list(options) do
-    Packet.build(conn.header, type, key, val, options)
-    |> transmit(conn.sock)
+    Packet.build(type, key, val, prefix, options)
+    |> transmit(sock, addr, port)
   end
 
-  defp transmit(packet, sock) do
-    Port.command(sock, packet)
-
-    receive do
-      {:inet_reply, _port, status} -> status
-    end
+  defp transmit(packet, sock, addr, port) do
+    :ok =
+      sock
+      |> Process.whereis()
+      |> :gen_udp.send(addr, port, packet)
   end
 
   if Version.match?(System.version(), ">= 1.3.0") do

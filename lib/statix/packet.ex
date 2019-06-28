@@ -3,26 +3,11 @@ defmodule Statix.Packet do
 
   use Bitwise
 
-  otp_release = :erlang.system_info(:otp_release)
-  @addr_family if(otp_release >= '19', do: [1], else: [])
-
-  def header({n1, n2, n3, n4}, port) do
-    @addr_family ++
-      [
-        band(bsr(port, 8), 0xFF),
-        band(port, 0xFF),
-        band(n1, 0xFF),
-        band(n2, 0xFF),
-        band(n3, 0xFF),
-        band(n4, 0xFF)
-      ]
-  end
-
-  def build(header, :event, title, text, options) do
+  def build(:event, title, text, prefix, options) do
     title_len = title |> String.length() |> Integer.to_string()
     text_len = text |> String.length() |> Integer.to_string()
 
-    [header, "_e{", title_len, ",", text_len, "}:", title, "|", text]
+    [prefix, "_e{", title_len, ",", text_len, "}:", title, "|", text]
     |> set_ext_option("d", options[:timestamp])
     |> set_ext_option("h", options[:hostname])
     |> set_ext_option("k", options[:aggregation_key])
@@ -32,8 +17,8 @@ defmodule Statix.Packet do
     |> set_option(:tags, options[:tags])
   end
 
-  def build(header, :service_check, name, status, options) do
-    [header, "_sc|", name]
+  def build(:service_check, name, status, prefix, options) do
+    [prefix, "_sc|", name]
     |> set_service_check_status(status)
     |> set_ext_option("d", options[:timestamp])
     |> set_ext_option("h", options[:hostname])
@@ -41,8 +26,8 @@ defmodule Statix.Packet do
     |> set_ext_option("m", options[:message])
   end
 
-  def build(header, name, key, val, options) do
-    [header, key, ?:, val, ?|, metric_type(name)]
+  def build(name, key, val, prefix, options) do
+    [prefix, key, ?:, val, ?|, metric_type(name)]
     |> set_option(:sample_rate, options[:sample_rate])
     |> set_option(:tags, options[:tags])
   end

@@ -9,7 +9,6 @@ It is focused on _speed_ without sacrificing _simplicity_, _completeness_, or _c
 What makes Statix the fastest library around:
 
   * direct sending to the socket <sup>[[1](#direct-sending)]</sup>
-  * caching of the UDP packets header
   * usage of [IO lists](http://jlouisramblings.blogspot.se/2013/07/problematic-traits-in-erlang.html)
 
 <sup><a name="direct-sending"></a>[1]</sup> In contrast with process-based clients, Statix has lower memory consumption and higher throughput – Statix v1.0.0 does about __876640__ counter increments per flush:

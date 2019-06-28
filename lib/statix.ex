@@ -266,11 +266,16 @@ defmodule Statix do
     current_conn =
       if Keyword.get(opts, :runtime_config, false) do
         quote do
-          @statix_header_key Module.concat(__MODULE__, :__statix_header__)
+          @statix_conn_opts_key Module.concat(__MODULE__, :__statix_conn_opts__)
 
           def connect() do
             conn = Statix.new_conn(__MODULE__)
-            Application.put_env(:statix, @statix_header_key, conn.header)
+
+            Application.put_env(:statix, @statix_conn_opts_key, %{
+              addr: conn.addr,
+              port: conn.port,
+              prefix: conn.prefix
+            })
 
             Statix.open_conn(conn)
             :ok
@@ -278,8 +283,10 @@ defmodule Statix do
 
           @compile {:inline, [current_conn: 0]}
           defp current_conn() do
-            header = Application.fetch_env!(:statix, @statix_header_key)
-            %Statix.Conn{header: header, sock: __MODULE__}
+            %{addr: addr, port: port, prefix: prefix} =
+              Application.fetch_env!(:statix, @statix_conn_opts_key)
+
+            %Statix.Conn{addr: addr, port: port, prefix: prefix, sock: __MODULE__}
           end
         end
       else
@@ -287,10 +294,11 @@ defmodule Statix do
           @statix_conn Statix.new_conn(__MODULE__)
 
           def connect() do
-            conn = @statix_conn
-            current_conn = Statix.new_conn(__MODULE__)
+            %{addr: addr, port: port, prefix: prefix} = @statix_conn
+            conn = Statix.new_conn(__MODULE__)
+            %{addr: current_addr, port: current_port, prefix: current_prefix} = conn
 
-            if conn.header != current_conn.header do
+            if addr != current_addr || port != current_port || prefix != current_prefix do
               raise(
                 "the current configuration for #{inspect(__MODULE__)} differs from " <>
                   "the one that was given during the compilation.\n" <>
@@ -373,8 +381,7 @@ defmodule Statix do
   def new_conn(module) do
     {host, port, prefix} = load_config(module)
     conn = Conn.new(host, port)
-    header = IO.iodata_to_binary([conn.header | prefix])
-    %{conn | header: header, sock: module}
+    %{conn | prefix: prefix, sock: module}
   end
 
   @doc false
