@@ -28,3 +28,5 @@ jobs:
       elixir: 1.7
     - otp_release: 21.0
       elixir: 1.8
+    - otp_release: 21.3.8
+      elixir: 1.8
