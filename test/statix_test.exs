@@ -345,6 +345,9 @@ defmodule StatixTest do
 
     TestStatix.increment("sample", 3, tags: ["foo"])
     assert_receive {:server, "sample:3|c|#foo,tag:test"}
+
+    TestStatix.event("sample title", "sample text", tags: ["foo", "bar"])
+    assert_receive {:server, "_e{12,11}:sample title|sample text|#foo,bar,tag:test"}
   after
     Application.delete_env(:statix, :tags)
   end
@@ -357,6 +360,9 @@ defmodule StatixTest do
 
     TestStatix.increment("sample", 3, tags: ["foo"])
     assert_receive {:server, "sample:3|c|#foo,tag:test"}
+
+    TestStatix.event("sample title", "sample text", tags: ["foo", "bar"])
+    assert_receive {:server, "_e{12,11}:sample title|sample text|#foo,bar,tag:test"}
   after
     Application.delete_env(:statix, TestStatix)
   end

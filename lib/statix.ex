@@ -393,13 +393,19 @@ defmodule Statix do
   @doc false
   def transmit(conn, :event, title, text, options)
       when is_binary(title) and is_binary(text) and is_list(options) do
-    Conn.transmit(conn, :event, title, text, options)
+    Conn.transmit(conn, :event, title, text, put_global_tags(conn.sock, options))
   end
 
   @doc false
   def transmit(conn, :service_check, name, status, options)
       when is_binary(name) and is_atom(status) and is_list(options) do
-    Conn.transmit(conn, :service_check, name, to_string(status), options)
+    Conn.transmit(
+      conn,
+      :service_check,
+      name,
+      to_string(status),
+      put_global_tags(conn.sock, options)
+    )
   end
 
   @doc false
